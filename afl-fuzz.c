@@ -163,7 +163,8 @@ EXP_ST u32 queued_paths,              /* Total number of queued testcases */
            useless_at_start,          /* Number of useless starting paths */
            var_byte_count,            /* Bitmap bytes with var behavior   */
            current_entry,             /* Current queue entry ID           */
-           havoc_div = 1;             /* Cycle count divisor for havoc    */
+           havoc_div = 1,             /* Cycle count divisor for havoc    */
+           case_id;                   /* mcgrady:add case id define       */
 
 EXP_ST u64 total_crashes,             /* Total number of crashes          */
            unique_crashes,            /* Crashes with unique signatures   */
@@ -3128,6 +3129,27 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 
     if (!(hnb = has_new_bits(virgin_bits))) {
       if (crash_mode) total_crashes++;
+
+      /* mcgrady:record all cases */
+      fn = alloc_printf("%s/cases/id:%06u,%s", out_dir, case_id,
+                      describe_op(0));
+      fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
+      if (fd < 0) PFATAL("Unable to create '%s'", fn);
+      ck_write(fd, mem, len, fn);
+      close(fd);
+      ck_free(fn);
+
+      fn = alloc_printf("%s/cases_label/id:%06u,%s", out_dir, case_id++,
+                      describe_op(0));
+      fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
+      if (fd < 0) PFATAL("Unable to create '%s'", fn);
+      u32 bmap_size = count_bytes(trace_bits);
+      ck_write(fd, &bmap_size, sizeof(bmap_size), fn);
+      close(fd);
+      ck_free(fn);
+
+      // case_id++;
+
       return 0;
     }    
 
@@ -3165,6 +3187,24 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
     close(fd);
 
     keeping = 1;
+ 
+    /* mcgrady:record all case into folder */
+    fn = alloc_printf("%s/cases/id:%06u,%s", out_dir, case_id,
+                      describe_op(0));
+    fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
+    if (fd < 0) PFATAL("Unable to create '%s'", fn);
+    ck_write(fd, mem, len, fn);
+    close(fd);
+    ck_free(fn);
+
+    fn = alloc_printf("%s/cases_label/id:%06u,%s", out_dir, case_id++,
+                      describe_op(0));
+    fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
+    if (fd < 0) PFATAL("Unable to create '%s'", fn);
+    u32 bmap_size = count_bytes(trace_bits);
+    ck_write(fd, &bmap_size, sizeof(bmap_size), fn);
+    close(fd);
+    ck_free(fn);
 
   }
 
@@ -3743,6 +3783,15 @@ static void maybe_delete_out_dir(void) {
   ck_free(fn);
 
   fn = alloc_printf("%s/queue", out_dir);
+  if (delete_files(fn, CASE_PREFIX)) goto dir_cleanup_failed;
+  ck_free(fn);
+
+  /* mcgrady:delete all output folders */
+  fn = alloc_printf("%s/cases", out_dir);
+  if (delete_files(fn, CASE_PREFIX)) goto dir_cleanup_failed;
+  ck_free(fn);
+
+  fn = alloc_printf("%s/cases_label", out_dir);
   if (delete_files(fn, CASE_PREFIX)) goto dir_cleanup_failed;
   ck_free(fn);
 
@@ -7171,6 +7220,16 @@ EXP_ST void setup_dirs_fds(void) {
   /* All recorded hangs. */
 
   tmp = alloc_printf("%s/hangs", out_dir);
+  if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
+  ck_free(tmp);
+
+  /* mcgrady:save training set  */
+  /* all generated case with its map size */
+  tmp = alloc_printf("%s/cases", out_dir);
+  if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
+  ck_free(tmp);
+
+  tmp = alloc_printf("%s/cases_label", out_dir);
   if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
