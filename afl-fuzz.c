@@ -3139,7 +3139,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
       close(fd);
       ck_free(fn);
 
-      fn = alloc_printf("%s/cases_label/id:%06u,%s", out_dir, case_id++,
+      fn = alloc_printf("%s/cases_label/id:%06u,%s", out_dir, case_id,
                       describe_op(0));
       fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
       if (fd < 0) PFATAL("Unable to create '%s'", fn);
@@ -3148,7 +3148,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
       close(fd);
       ck_free(fn);
 
-      // case_id++;
+      case_id++;
 
       return 0;
     }    
@@ -3197,7 +3197,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
     close(fd);
     ck_free(fn);
 
-    fn = alloc_printf("%s/cases_label/id:%06u,%s", out_dir, case_id++,
+    fn = alloc_printf("%s/cases_label/id:%06u,%s", out_dir, case_id,
                       describe_op(0));
     fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
     if (fd < 0) PFATAL("Unable to create '%s'", fn);
@@ -3205,6 +3205,8 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
     ck_write(fd, &bmap_size, sizeof(bmap_size), fn);
     close(fd);
     ck_free(fn);
+
+    case_id++;
 
   }
 
